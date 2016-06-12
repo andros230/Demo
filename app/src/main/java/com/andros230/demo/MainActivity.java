@@ -12,6 +12,15 @@ import com.amap.api.location.AMapLocationListener;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements LocationSource, AMapLocationListener {
     private MapView mMapView;
@@ -47,21 +56,24 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
 
     @Override
     protected void onDestroy() {
+        Log.d("---", "onDestroy");
         super.onDestroy();
         mMapView.onDestroy();
-        if (mLocationClient == null) {
+        if (mLocationClient != null) {
             mLocationClient.onDestroy();
         }
     }
 
     @Override
     protected void onResume() {
+        Log.d("---", "onResume");
         super.onResume();
         mMapView.onResume();
     }
 
     @Override
     protected void onPause() {
+        Log.d("---", "onPause");
         super.onPause();
         mMapView.onPause();
         deactivate();
@@ -69,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        Log.d("---", "onSaveInstanceState");
         super.onSaveInstanceState(outState);
         mMapView.onSaveInstanceState(outState);
     }
@@ -78,7 +91,13 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (mListener != null && aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
-                mListener.onLocationChanged(aMapLocation);
+                mListener.onLocationChanged(aMapLocation); // 显示系统小蓝点
+
+                Log.d("---", "经度：" + aMapLocation.getLongitude());
+                Log.d("---", "纬度：" + aMapLocation.getLatitude());
+                Log.d("---", "精度：" + aMapLocation.getAccuracy());
+                sendLatLon("http://192.168.0.101:8080/testss/a230", aMapLocation.getLongitude(), aMapLocation.getLatitude(), aMapLocation.getAccuracy());
+
             } else {
                 Log.e("MainActivity", "定位失败,错误代码;" + aMapLocation.getErrorCode() + ",错误信息:" + aMapLocation.getErrorInfo());
             }
@@ -111,5 +130,33 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
             mLocationClient.onDestroy();
         }
         mLocationClient = null;
+    }
+
+    //连接服务器
+    public void sendLatLon(String url, final double Longitude, final double Latitude, final double Accuracy) {
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        StringRequest postRequest = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                // 返回数据
+                Log.d("Response-------", response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("Error.Response", error.getMessage());
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() {
+                //POST 参数
+                Map<String, String> params = new HashMap<>();
+                params.put("Longitude", Longitude + "");
+                params.put("Latitude", Latitude + "");
+                params.put("Accuracy", Accuracy + "");
+                return params;
+            }
+        };
+        requestQueue.add(postRequest);
     }
 }
