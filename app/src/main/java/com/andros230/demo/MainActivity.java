@@ -1,5 +1,8 @@
 package com.andros230.demo;
 
+import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -134,6 +137,11 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
 
     //连接服务器
     public void sendLatLon(String url, final double Longitude, final double Latitude, final double Accuracy) {
+        //获取Mac
+        WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        WifiInfo info = wifi.getConnectionInfo();
+        final String Mac = info.getMacAddress();
+
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         StringRequest postRequest = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
             @Override
@@ -151,6 +159,7 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
             protected Map<String, String> getParams() {
                 //POST 参数
                 Map<String, String> params = new HashMap<>();
+                params.put("Mac", Mac);
                 params.put("Longitude", Longitude + "");
                 params.put("Latitude", Latitude + "");
                 params.put("Accuracy", Accuracy + "");
