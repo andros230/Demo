@@ -58,13 +58,17 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         }
         //地图模式切换下拉框
         Spinner spinner = (Spinner) findViewById(R.id.layers_spinner);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                this, R.array.layers_array,
-                android.R.layout.simple_spinner_item);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.layers_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
 
+        //定位模式切换下拉框
+        Spinner gps_spinner = (Spinner) findViewById(R.id.gps_spinner);
+        ArrayAdapter<CharSequence> gps_adapter = ArrayAdapter.createFromResource(this, R.array.gps_array, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        gps_spinner.setAdapter(gps_adapter);
+        gps_spinner.setOnItemSelectedListener(this);
     }
 
 
@@ -184,17 +188,24 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     }
 
     /**
-     * 选择矢量地图/卫星地图/夜景地图事件的响应
+     * 下拉框的事件响应
      */
     private void setLayer(String layerName) {
         if (layerName.equals("矢量地图")) {
             aMap.setMapType(AMap.MAP_TYPE_NORMAL);// 矢量地图模式
         } else if (layerName.equals("卫星地图")) {
             aMap.setMapType(AMap.MAP_TYPE_SATELLITE);// 卫星地图模式
-        } else if(layerName.equals("夜景地图")){
+        } else if (layerName.equals("夜景地图")) {
             aMap.setMapType(AMap.MAP_TYPE_NIGHT);//夜景地图模式
-        } else if(layerName.equals("导航模式")){
+        } else if (layerName.equals("导航模式")) {
             aMap.setMapType(AMap.MAP_TYPE_NAVI);//导航模式
+
+        } else if (layerName.equals("定位模式")) {
+            aMap.setMyLocationType(AMap.LOCATION_TYPE_LOCATE); //定位模式
+        } else if (layerName.equals("跟随模式")) {
+            aMap.setMyLocationType(AMap.LOCATION_TYPE_MAP_FOLLOW); //跟随模式
+        } else if (layerName.equals("旋转模式")) {
+            aMap.setMyLocationType(AMap.LOCATION_TYPE_MAP_ROTATE); // 设置定位的类型为根据地图面向方向旋转
         }
     }
 

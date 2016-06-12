@@ -7,4 +7,11 @@
         <item>夜景地图</item>
         <item>导航模式</item>
     </string-array>
+
+    <string-array name="gps_array">
+        <item>定位模式</item>
+        <item>跟随模式</item>
+        <item>旋转模式</item>
+    </string-array>
+
 </resources>

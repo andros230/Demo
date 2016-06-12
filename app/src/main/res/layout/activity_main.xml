@@ -15,11 +15,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
         <Spinner
             android:id="@+id/layers_spinner"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:id="@+id/gps_spinner"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
 
