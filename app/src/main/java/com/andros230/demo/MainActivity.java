@@ -1,12 +1,15 @@
 package com.andros230.demo;
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Window;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
 import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
@@ -25,7 +28,7 @@ import com.android.volley.toolbox.Volley;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements LocationSource, AMapLocationListener {
+public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener {
     private MapView mMapView;
     private AMap aMap;
 
@@ -36,7 +39,6 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);// 不显示程序的标题栏
         setContentView(R.layout.activity_main);
         mMapView = (MapView) findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState); // 此方法必须重写
@@ -54,12 +56,20 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
             aMap.setMyLocationEnabled(true); // 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
             aMap.setMyLocationType(AMap.LOCATION_TYPE_LOCATE);  // 设置定位的类型为定位模式 ，可以由定位、跟随或地图根据面向方向旋转几种
         }
+        //地图模式切换下拉框
+        Spinner spinner = (Spinner) findViewById(R.id.layers_spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this, R.array.layers_array,
+                android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
+
     }
 
 
     @Override
     protected void onDestroy() {
-        Log.d("---", "onDestroy");
         super.onDestroy();
         mMapView.onDestroy();
         if (mLocationClient != null) {
@@ -69,14 +79,12 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
 
     @Override
     protected void onResume() {
-        Log.d("---", "onResume");
         super.onResume();
         mMapView.onResume();
     }
 
     @Override
     protected void onPause() {
-        Log.d("---", "onPause");
         super.onPause();
         mMapView.onPause();
         deactivate();
@@ -84,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        Log.d("---", "onSaveInstanceState");
         super.onSaveInstanceState(outState);
         mMapView.onSaveInstanceState(outState);
     }
@@ -167,5 +174,31 @@ public class MainActivity extends AppCompatActivity implements LocationSource, A
             }
         };
         requestQueue.add(postRequest);
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        if (aMap != null) {
+            setLayer((String) parent.getItemAtPosition(position));
+        }
+    }
+
+    /**
+     * 选择矢量地图/卫星地图/夜景地图事件的响应
+     */
+    private void setLayer(String layerName) {
+        if (layerName.equals("矢量地图")) {
+            aMap.setMapType(AMap.MAP_TYPE_NORMAL);// 矢量地图模式
+        } else if (layerName.equals("卫星地图")) {
+            aMap.setMapType(AMap.MAP_TYPE_SATELLITE);// 卫星地图模式
+        } else if(layerName.equals("夜景地图")){
+            aMap.setMapType(AMap.MAP_TYPE_NIGHT);//夜景地图模式
+        } else if(layerName.equals("导航模式")){
+            aMap.setMapType(AMap.MAP_TYPE_NAVI);//导航模式
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
     }
 }
