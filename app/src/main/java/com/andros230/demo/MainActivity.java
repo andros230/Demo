@@ -24,8 +24,11 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener {
@@ -158,12 +161,22 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             @Override
             public void onResponse(String response) {
                 // 返回数据
-                Log.d("Response-------", response);
+                Gson gson = new Gson();
+                List<LatLonKit> kit = gson.fromJson(response, new TypeToken<List<LatLonKit>>() {
+                }.getType());
+                for (int i = 0; i < kit.size(); i++) {
+
+
+                    LatLonKit k = kit.get(i);
+                    Log.d("Mac-------", k.getMac());
+                    Log.d("Longitude-------", k.getLongitude());
+                    Log.d("Latitude-------", k.getLatitude());
+                }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e("Error.Response", error.getMessage());
+                Log.e("Error.Response", error.toString());
             }
         }) {
             @Override
