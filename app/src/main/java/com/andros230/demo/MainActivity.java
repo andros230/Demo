@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener {
+public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener,AMap.OnMarkerClickListener {
     private MapView mMapView;
     private AMap aMap;
 
@@ -61,6 +61,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         if (aMap == null) {
             aMap = mMapView.getMap();
             aMap.setLocationSource(this);  //设置定位监听
+            aMap.setOnMarkerClickListener(this);
             aMap.getUiSettings().setMyLocationButtonEnabled(true);  //设置默认定位按键是否显示
             aMap.setMyLocationEnabled(true); // 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
             aMap.setMyLocationType(AMap.LOCATION_TYPE_LOCATE);  // 设置定位的类型为定位模式 ，可以由定位、跟随或地图根据面向方向旋转几种
@@ -117,7 +118,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 mListener.onLocationChanged(aMapLocation); // 显示系统小蓝点
                 Log.d("---", "经度：" + aMapLocation.getLongitude());
                 Log.d("---", "纬度：" + aMapLocation.getLatitude());
-                sendLatLon("http://192.168.0.101:8080/testss/a230", aMapLocation.getLongitude(), aMapLocation.getLatitude());
+                sendLatLon("http://192.168.0.101:8080/Demo_server/MainServer", aMapLocation.getLongitude(), aMapLocation.getLatitude());
 
             } else {
                 Log.e("MainActivity", "定位失败,错误代码;" + aMapLocation.getErrorCode() + ",错误信息:" + aMapLocation.getErrorInfo());
@@ -137,6 +138,10 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             mLocationClient.setLocationListener(this);
             //设置为高精度定位模式
             mLocationClientOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
+            //是否允许模拟位置
+            mLocationClientOption.setMockEnable(false);
+            //定位时间间隔
+            mLocationClientOption.setInterval(1000*10);
             mLocationClient.setLocationOption(mLocationClientOption);
             mLocationClient.startLocation();
         }
@@ -171,7 +176,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 }.getType());
                 for (int i = 0; i < kit.size(); i++) {
                     LatLonKit k = kit.get(i);
-                    addMarker(new LatLng(Double.valueOf(k.getLatitude()),Double.valueOf(k.getLongitude())));
+                    addMarker(new LatLng(Double.valueOf(k.getLatitude()),Double.valueOf(k.getLongitude())),k.getMac());
                     Log.d("---",Double.valueOf(k.getLatitude())+"");
                 }
             }
@@ -227,10 +232,17 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     public void onNothingSelected(AdapterView<?> parent) {
     }
 
-    public void addMarker(LatLng latLng) {
+    public void addMarker(LatLng latLng, String mac) {
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(latLng);
+        markerOptions.title(mac);
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         aMap.addMarker(markerOptions);
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        marker.showInfoWindow();
+        return false;
     }
 }
