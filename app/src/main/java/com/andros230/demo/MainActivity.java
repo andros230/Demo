@@ -15,9 +15,14 @@ import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
+import com.amap.api.mapcore.am;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
+import com.amap.api.maps.model.BitmapDescriptorFactory;
+import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.model.Marker;
+import com.amap.api.maps.model.MarkerOptions;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -27,6 +32,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,11 +115,9 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         if (mListener != null && aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
                 mListener.onLocationChanged(aMapLocation); // 显示系统小蓝点
-
                 Log.d("---", "经度：" + aMapLocation.getLongitude());
                 Log.d("---", "纬度：" + aMapLocation.getLatitude());
-                Log.d("---", "精度：" + aMapLocation.getAccuracy());
-                sendLatLon("http://192.168.0.101:8080/testss/a230", aMapLocation.getLongitude(), aMapLocation.getLatitude(), aMapLocation.getAccuracy());
+                sendLatLon("http://192.168.0.101:8080/testss/a230", aMapLocation.getLongitude(), aMapLocation.getLatitude());
 
             } else {
                 Log.e("MainActivity", "定位失败,错误代码;" + aMapLocation.getErrorCode() + ",错误信息:" + aMapLocation.getErrorInfo());
@@ -150,7 +154,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     }
 
     //连接服务器
-    public void sendLatLon(String url, final double Longitude, final double Latitude, final double Accuracy) {
+    public void sendLatLon(String url, final double Longitude, final double Latitude) {
         //获取Mac
         WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         WifiInfo info = wifi.getConnectionInfo();
@@ -161,16 +165,14 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             @Override
             public void onResponse(String response) {
                 // 返回数据
+                aMap.clear(true);
                 Gson gson = new Gson();
                 List<LatLonKit> kit = gson.fromJson(response, new TypeToken<List<LatLonKit>>() {
                 }.getType());
                 for (int i = 0; i < kit.size(); i++) {
-
-
                     LatLonKit k = kit.get(i);
-                    Log.d("Mac-------", k.getMac());
-                    Log.d("Longitude-------", k.getLongitude());
-                    Log.d("Latitude-------", k.getLatitude());
+                    addMarker(new LatLng(Double.valueOf(k.getLatitude()),Double.valueOf(k.getLongitude())));
+                    Log.d("---",Double.valueOf(k.getLatitude())+"");
                 }
             }
         }, new Response.ErrorListener() {
@@ -184,9 +186,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 //POST 参数
                 Map<String, String> params = new HashMap<>();
                 params.put("Mac", Mac);
-                params.put("Longitude", Longitude + "");
-                params.put("Latitude", Latitude + "");
-                params.put("Accuracy", Accuracy + "");
+                params.put("Lng", Longitude + "");
+                params.put("Lat", Latitude + "");
                 return params;
             }
         };
@@ -224,5 +225,12 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
+    }
+
+    public void addMarker(LatLng latLng) {
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(latLng);
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+        aMap.addMarker(markerOptions);
     }
 }
