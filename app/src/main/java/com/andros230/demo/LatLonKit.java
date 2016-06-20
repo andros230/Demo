@@ -1,25 +1,16 @@
 package com.andros230.demo;
 
+
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 
 import cn.bmob.v3.BmobObject;
 
-/**
- * Created by andros230 on 2016/6/14.
- */
 public class LatLonKit extends BmobObject {
     private String mac;
     private String longitude;
     private String latitude;
-
-    public LatLonKit(Context context) {
-        //获取Mac
-        WifiManager wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo info = wifi.getConnectionInfo();
-        this.mac = info.getMacAddress();
-    }
 
     public String getMac() {
         return mac;
@@ -45,5 +36,14 @@ public class LatLonKit extends BmobObject {
         this.latitude = latitude;
     }
 
+    public String toString() {
+        return "mac:" + mac + " lat:" + latitude + " log:" + longitude;
+    }
 
+    public String getLocalMac(Context context){
+        //获取Mac
+        WifiManager wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo info = wifi.getConnectionInfo();
+        return info.getMacAddress();
+    }
 }
