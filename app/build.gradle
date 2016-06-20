@@ -25,8 +25,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile files('libs/AMap_3DMap_V3.3.1_20160419.jar')
     compile files('libs/AMap_Location_V2.5.0_20160526.jar')
-    compile files('libs/Volley.jar')
-    compile files('libs/gson-2.3.1.jar')
+    compile files('libs/BmobSDK_V3.4.7_0527.jar')
+    compile files('libs/okio-1.7.0.jar')
+    compile files('libs/okhttp-3.2.0.jar')
 }
 
 android {

@@ -1,9 +1,6 @@
 package com.andros230.demo;
 
 import android.app.Activity;
-import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -15,7 +12,6 @@ import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
-import com.amap.api.mapcore.am;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
@@ -23,27 +19,23 @@ import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.json.JSONObject;
 
-public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener,AMap.OnMarkerClickListener {
+
+import cn.bmob.v3.Bmob;
+import cn.bmob.v3.BmobRealTimeData;
+import cn.bmob.v3.listener.UpdateListener;
+import cn.bmob.v3.listener.ValueEventListener;
+
+public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener, AMap.OnMarkerClickListener {
     private MapView mMapView;
     private AMap aMap;
 
     private OnLocationChangedListener mListener;
     private AMapLocationClient mLocationClient;
     private AMapLocationClientOption mLocationClientOption;
+    BmobRealTimeData data = new BmobRealTimeData();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +43,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         setContentView(R.layout.activity_main);
         mMapView = (MapView) findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState); // 此方法必须重写
+        Bmob.initialize(this, "5b9353d27ae18dc5aafb5bf57b85a06b");
         init();
-
     }
 
 
@@ -116,15 +108,21 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         if (mListener != null && aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
                 mListener.onLocationChanged(aMapLocation); // 显示系统小蓝点
+                if (!data.isConnected()) {
+                    realTimeData();
+                    Log.d("监听状态---", "激活监听--------------");
+                }
+
                 Log.d("---", "经度：" + aMapLocation.getLongitude());
                 Log.d("---", "纬度：" + aMapLocation.getLatitude());
-                sendLatLon("http://192.168.0.101:8080/Demo_server/MainServer", aMapLocation.getLongitude(), aMapLocation.getLatitude());
-
+                LatLonKit kit = new LatLonKit(this);
+                kit.setLongitude(aMapLocation.getLongitude() + "");
+                kit.setLatitude(aMapLocation.getLatitude() + "");
+                update(kit);
             } else {
                 Log.e("MainActivity", "定位失败,错误代码;" + aMapLocation.getErrorCode() + ",错误信息:" + aMapLocation.getErrorInfo());
             }
         }
-
     }
 
     //激活定位
@@ -141,7 +139,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             //是否允许模拟位置
             mLocationClientOption.setMockEnable(false);
             //定位时间间隔
-            mLocationClientOption.setInterval(1000*10);
+            mLocationClientOption.setInterval(1000 * 2);
             mLocationClient.setLocationOption(mLocationClientOption);
             mLocationClient.startLocation();
         }
@@ -158,46 +156,6 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         mLocationClient = null;
     }
 
-    //连接服务器
-    public void sendLatLon(String url, final double Longitude, final double Latitude) {
-        //获取Mac
-        WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        WifiInfo info = wifi.getConnectionInfo();
-        final String Mac = info.getMacAddress();
-
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        StringRequest postRequest = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                // 返回数据
-                aMap.clear(true);
-                Gson gson = new Gson();
-                List<LatLonKit> kit = gson.fromJson(response, new TypeToken<List<LatLonKit>>() {
-                }.getType());
-                for (int i = 0; i < kit.size(); i++) {
-                    LatLonKit k = kit.get(i);
-                    addMarker(new LatLng(Double.valueOf(k.getLatitude()),Double.valueOf(k.getLongitude())),k.getMac());
-                    Log.d("---",Double.valueOf(k.getLatitude())+"");
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("Error.Response", error.toString());
-            }
-        }) {
-            @Override
-            protected Map<String, String> getParams() {
-                //POST 参数
-                Map<String, String> params = new HashMap<>();
-                params.put("Mac", Mac);
-                params.put("Lng", Longitude + "");
-                params.put("Lat", Latitude + "");
-                return params;
-            }
-        };
-        requestQueue.add(postRequest);
-    }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -244,5 +202,46 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     public boolean onMarkerClick(Marker marker) {
         marker.showInfoWindow();
         return false;
+    }
+
+
+    //Bmob
+    //更新数据
+    public void update(LatLonKit kit) {
+        kit.update(this, "YcyFeEEG", new UpdateListener() {
+            @Override
+            public void onSuccess() {
+                Log.d("更新成功---", "onSuccess");
+            }
+
+            @Override
+            public void onFailure(int i, String s) {
+                Log.e("更新失败---", "onFailure");
+            }
+        });
+    }
+
+    //实时数据监听
+    public void realTimeData() {
+        data.start(this, new ValueEventListener() {
+            @Override
+            public void onDataChange(JSONObject arg0) {
+                // TODO Auto-generated method stub\
+                JSONObject data = arg0.optJSONObject("data");
+                double log = Double.valueOf(data.optString("longitude"));
+                double lat = Double.valueOf(data.optString("latitude"));
+                String mac = data.optString("mac");
+                aMap.clear(true);
+                addMarker(new LatLng(lat, log), mac);
+            }
+
+            @Override
+            public void onConnectCompleted() {
+                // TODO Auto-generated method stub
+                if (data.isConnected()) {
+                    data.subTableUpdate("LatLonKit");
+                }
+            }
+        });
     }
 }
