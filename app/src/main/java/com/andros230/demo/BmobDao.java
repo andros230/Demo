@@ -148,6 +148,13 @@ public class BmobDao {
         }
     }
 
+    public void unRealTimeData(){
+        data.unsubTableUpdate("LatLonKit");
+    }
+
+
+
+
     //地图标注
     public void addMarker(AMap aMap) {
         aMap.clear(true);

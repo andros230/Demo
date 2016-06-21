@@ -1,7 +1,12 @@
 package com.andros230.demo;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -36,7 +41,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         mMapView.onCreate(savedInstanceState); // 此方法必须重写
         dao = new BmobDao(getApplicationContext());
         init();
-
+        AlarmCPU();
     }
 
     //地图初始化
@@ -83,7 +88,6 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     protected void onPause() {
         super.onPause();
         mMapView.onPause();
-        deactivate();
     }
 
     @Override
@@ -107,7 +111,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 kit.setLatitude(aMapLocation.getLatitude() + "");
                 if (dao.getId() != null) {
                     dao.update(kit);
-                }else{
+                } else {
                     dao.query(kit);
                 }
             } else {
@@ -186,5 +190,14 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         return false;
     }
 
+    //alarmManager可叫醒CPU,保证关闭屏后还可定位
+    public void AlarmCPU() {
+        Intent intentRepeat = new Intent(this, MainActivity.class);
+        PendingIntent sender = PendingIntent.getService(this, 0, intentRepeat, 0);
+        long triggerTime = SystemClock.elapsedRealtime() + 1000; // 第一次时间
+        long intervalTime = 1000; // ms
+        AlarmManager am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+        am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerTime, intervalTime, sender);
+    }
 
 }
