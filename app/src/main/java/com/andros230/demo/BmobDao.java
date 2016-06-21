@@ -22,9 +22,6 @@ import cn.bmob.v3.listener.SaveListener;
 import cn.bmob.v3.listener.UpdateListener;
 import cn.bmob.v3.listener.ValueEventListener;
 
-/**
- * Created by andros230 on 2016/6/20.
- */
 public class BmobDao {
     private Context context;
     private BmobRealTimeData data;
@@ -37,7 +34,7 @@ public class BmobDao {
         this.context = context;
         data = new BmobRealTimeData();
         db = new DBOpenHelper(context);
-        query();
+
     }
 
     public String getId() {
@@ -46,62 +43,55 @@ public class BmobDao {
 
     //更新数据
     public void update(LatLonKit kit) {
-        Log.d("id---", id);
         kit.update(context, id, new UpdateListener() {
             @Override
             public void onSuccess() {
-                Log.d("更新成功---", "onSuccess");
+                Log.i(TAG, "id:" + id + "  更新成功");
             }
 
             @Override
             public void onFailure(int i, String s) {
-                Log.e("更新失败---", "onFailure");
+                Log.e(TAG, "id:" + id + "  更新失败");
             }
         });
     }
 
     //查询数据
-    public void query() {
+    public void query(final LatLonKit akit) {
         BmobQuery<LatLonKit> query = new BmobQuery<>();
-        LatLonKit kit = new LatLonKit();
+        final LatLonKit kit = new LatLonKit();
         query.addWhereEqualTo("mac", kit.getLocalMac(context));
         query.findObjects(context, new FindListener<LatLonKit>() {
             @Override
             public void onSuccess(List<LatLonKit> list) {
-                Log.d("查询数据size---", list.size() + "");
-                if (list.size() == 0) {
-                    save();
-                } else {
+                if (list.size() != 0) {
                     for (LatLonKit kit : list) {
                         id = kit.getObjectId();
-                        Log.d("查询数据---", "id:" + id);
+                        Log.i(TAG, "第一次添加数据成功 id:" + id);
                     }
+                }else {
+                    save(akit);
                 }
             }
 
             @Override
             public void onError(int i, String s) {
-                Log.e("查询数据---", "onError");
+                Log.e(TAG, "查询数据出错 id:" + id);
             }
         });
     }
 
     //保存数据
-    public void save() {
-        LatLonKit kit = new LatLonKit();
-        kit.setMac(kit.getLocalMac(context));
-        kit.setLatitude("0");
-        kit.setLongitude("0");
+    public void save(final LatLonKit kit) {
         kit.save(context, new SaveListener() {
             @Override
             public void onSuccess() {
-                Log.d("保存数据---", "onSuccess");
-                query();
+                Log.i(TAG, "数据保存成功");
             }
 
             @Override
             public void onFailure(int i, String s) {
-                Log.e("保存数据---", "onFailure");
+                Log.e(TAG, "数据保存失败");
             }
         });
     }
@@ -113,12 +103,12 @@ public class BmobDao {
         kit.delete(context, new DeleteListener() {
             @Override
             public void onSuccess() {
-                Log.d("删除成功---", "onSuccess");
+                Log.i(TAG, "数据删除成功");
             }
 
             @Override
             public void onFailure(int i, String s) {
-                Log.e("删除失败---", "onFailure");
+                Log.e(TAG, "数据删除失败");
             }
         });
     }
@@ -126,6 +116,7 @@ public class BmobDao {
     //实时数据监听
     public void realTimeData() {
         if (!data.isConnected()) {
+            Log.e(TAG, "数据监听为关闭状态");
             data.start(context, new ValueEventListener() {
                 @Override
                 public void onDataChange(JSONObject arg0) {
@@ -135,9 +126,6 @@ public class BmobDao {
                     kit.setMac(data.optString("mac"));
                     kit.setLatitude(data.optString("latitude"));
                     kit.setLongitude(data.optString("longitude"));
-                    Log.d("----realTimeData", kit.getMac());
-                    Log.d("----realTimeData", kit.getLatitude());
-                    Log.d("----realTimeData", kit.getLongitude());
                     if (!kit.getMac().equals("") && !kit.getLatitude().equals("") && !kit.getLongitude().equals("")) {
                         if (db.queryMacExist(kit.getMac())) {
                             db.update(kit);
@@ -155,6 +143,8 @@ public class BmobDao {
                     }
                 }
             });
+        } else {
+            Log.i(TAG, "数据监听中...");
         }
     }
 
@@ -162,21 +152,19 @@ public class BmobDao {
     public void addMarker(AMap aMap) {
         aMap.clear(true);
         Cursor cur = db.query();
-        Log.d("---", "sqlite查询结果------------------------------");
         while (cur.moveToNext()) {
-
             String mac = cur.getString(1);
             String lat = cur.getString(2);
             String log = cur.getString(3);
-            Log.d("---", "mac: " + mac);
-            Log.d("---", "lat: " + lat);
-            Log.d("---", "log: " + log);
-            LatLng latLng = new LatLng(Double.valueOf(lat), Double.valueOf(log));
-            MarkerOptions markerOptions = new MarkerOptions();
-            markerOptions.position(latLng);
-            markerOptions.title(mac);
-            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
-            aMap.addMarker(markerOptions);
+            if (!mac.equals(new LatLonKit().getLocalMac(context))) {
+                Log.i(TAG, "数据库查询数据: mac: " + mac + " lat: " + lat + " log: " + log);
+                LatLng latLng = new LatLng(Double.valueOf(lat), Double.valueOf(log));
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(latLng);
+                markerOptions.title(mac);
+                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+                aMap.addMarker(markerOptions);
+            }
         }
     }
 }

@@ -17,10 +17,21 @@ public class DBOpenHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onCreate(SQLiteDatabase sqLiteDatabase) {
+    public void onCreate(SQLiteDatabase db) {
+
         String sql = "CREATE TABLE " + TABLE_NAME + " (id INTEGER primary key autoincrement, mac text, lat text, log text);";
-        sqLiteDatabase.execSQL(sql);
-        Log.d(TAG, "创建数据库");
+        db.execSQL(sql);
+        Log.i(TAG, "创建数据库");
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        db.execSQL("DROP TABLE IF EXISTS "+TABLE_NAME);
+        Log.i(TAG, "删除数据库");
+        String sql = "CREATE TABLE " + TABLE_NAME + " (id INTEGER primary key autoincrement, mac text, lat text, log text);";
+        db.execSQL(sql);
+        Log.i(TAG, "删除数据库后再新建");
     }
 
     //增加操作
@@ -32,7 +43,7 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         cv.put("log", kit.getLongitude());
         long row = db.insert(TABLE_NAME, null, cv);
         if (row != 0) {
-            Log.d(TAG, "增加成功: " + kit.toString());
+            Log.i(TAG, "增加成功: " + kit.toString());
         } else {
             Log.e(TAG, "增加失败: " + kit.toString());
         }
@@ -60,7 +71,7 @@ public class DBOpenHelper extends SQLiteOpenHelper {
             cur.close();
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG, "searchMacExist查询失败,mac:" + mac);
+            Log.e(TAG, "查询出错,mac:" + mac);
         }
         return rs;
     }
@@ -73,9 +84,9 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         cv.put("log", kit.getLongitude());
         int rs = db.update(TABLE_NAME, cv, "mac = ?", new String[]{kit.getMac()});
         if (rs != 0) {
-            Log.d(TAG, "修改成功: " + kit.toString());
+            Log.i(TAG, "本地数据修改成功: " + kit.toString());
         } else {
-            Log.e(TAG, "修改失败, " + kit.toString());
+            Log.e(TAG, "本地数据修改失败, " + kit.toString());
         }
     }
 
@@ -84,7 +95,7 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         int rs = db.delete(TABLE_NAME, "mac = ?", new String[]{mac});
         if (rs != 0) {
-            Log.d(TAG, "删除成功,mac:" + mac);
+            Log.i(TAG, "删除成功,mac:" + mac);
         } else {
             Log.e(TAG, "删除失败,mac:" + mac);
         }

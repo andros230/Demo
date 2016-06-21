@@ -26,6 +26,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     private AMapLocationClient mLocationClient;
     private AMapLocationClientOption mLocationClientOption;
 
+    private String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +97,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (mListener != null && aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
-                Log.d("---","定位成功");
+                Log.i(TAG, "定位成功");
                 mListener.onLocationChanged(aMapLocation); // 显示系统小蓝点
                 dao.addMarker(aMap);
                 dao.realTimeData();
@@ -104,11 +105,13 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 kit.setMac(kit.getLocalMac(this));
                 kit.setLongitude(aMapLocation.getLongitude() + "");
                 kit.setLatitude(aMapLocation.getLatitude() + "");
-                if (dao.getId() != null){
+                if (dao.getId() != null) {
                     dao.update(kit);
+                }else{
+                    dao.query(kit);
                 }
             } else {
-                Log.e("MainActivity", "定位失败,错误代码;" + aMapLocation.getErrorCode() + ",错误信息:" + aMapLocation.getErrorInfo());
+                Log.e(TAG, "定位失败,错误代码;" + aMapLocation.getErrorCode() + ",错误信息:" + aMapLocation.getErrorInfo());
             }
         }
     }
