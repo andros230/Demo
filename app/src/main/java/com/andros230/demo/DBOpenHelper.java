@@ -7,6 +7,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 
 public class DBOpenHelper extends SQLiteOpenHelper {
     private String TAG = "DBOpneHelper";
@@ -18,20 +22,9 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-
-        String sql = "CREATE TABLE " + TABLE_NAME + " (id INTEGER primary key autoincrement, mac text, lat text, log text);";
+        String sql = "CREATE TABLE " + TABLE_NAME + " (id INTEGER primary key autoincrement, mac text, lat text, log text, time text);";
         db.execSQL(sql);
         Log.i(TAG, "创建数据库");
-    }
-
-    @Override
-    public void onOpen(SQLiteDatabase db) {
-        super.onOpen(db);
-        db.execSQL("DROP TABLE IF EXISTS "+TABLE_NAME);
-        Log.i(TAG, "删除数据库");
-        String sql = "CREATE TABLE " + TABLE_NAME + " (id INTEGER primary key autoincrement, mac text, lat text, log text);";
-        db.execSQL(sql);
-        Log.i(TAG, "删除数据库后再新建");
     }
 
     //增加操作
@@ -41,6 +34,7 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         cv.put("mac", kit.getMac());
         cv.put("lat", kit.getLatitude());
         cv.put("log", kit.getLongitude());
+        cv.put("time", getNowTime());
         long row = db.insert(TABLE_NAME, null, cv);
         if (row != 0) {
             Log.i(TAG, "增加成功: " + kit.toString());
@@ -82,6 +76,7 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put("lat", kit.getLatitude());
         cv.put("log", kit.getLongitude());
+        cv.put("time", getNowTime());
         int rs = db.update(TABLE_NAME, cv, "mac = ?", new String[]{kit.getMac()});
         if (rs != 0) {
             Log.i(TAG, "本地数据修改成功: " + kit.toString());
@@ -101,7 +96,38 @@ public class DBOpenHelper extends SQLiteOpenHelper {
         }
     }
 
+    public int compareTime(String time) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");    //设置时间格式
+            Date curDate = new Date(System.currentTimeMillis());//获取当前时间
+            String str = sdf.format(curDate);
+            Date d1 = sdf.parse(str);
+            Date d2 = sdf.parse(time);
+            long l = d1.getTime() - d2.getTime();
+            long min = ((l / (60 * 1000)));//分
+            return (int) min;
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    public String getNowTime() {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");    //设置时间格式
+            Date curDate = new Date(System.currentTimeMillis());//获取当前时间
+            String str = sdf.format(curDate);
+            return str;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
     }
+
+
 }

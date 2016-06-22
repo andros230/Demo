@@ -22,6 +22,11 @@ import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.Marker;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
 public class MainActivity extends Activity implements LocationSource, AMapLocationListener, AdapterView.OnItemSelectedListener, AMap.OnMarkerClickListener {
     private MapView mMapView;
     private AMap aMap;
@@ -82,12 +87,14 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     protected void onResume() {
         super.onResume();
         mMapView.onResume();
+        dao.realTimeData();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mMapView.onPause();
+        dao.unRealTimeData();
     }
 
     @Override
@@ -101,10 +108,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (mListener != null && aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
-                Log.i(TAG, "定位成功");
                 mListener.onLocationChanged(aMapLocation); // 显示系统小蓝点
                 dao.addMarker(aMap);
-                dao.realTimeData();
                 LatLonKit kit = new LatLonKit();
                 kit.setMac(kit.getLocalMac(this));
                 kit.setLongitude(aMapLocation.getLongitude() + "");
@@ -133,7 +138,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             mLocationClientOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
             //是否允许模拟位置
             //定位时间间隔
-            mLocationClientOption.setInterval(1000 * 5);
+            mLocationClientOption.setInterval(1000 * 10);
             mLocationClient.setLocationOption(mLocationClientOption);
             mLocationClient.startLocation();
         }
@@ -150,7 +155,6 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         mLocationClient = null;
     }
 
-
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         if (aMap != null) {
@@ -158,9 +162,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         }
     }
 
-    /**
-     * 下拉框的事件响应
-     */
+    //下拉框的事件响应
     private void setLayer(String layerName) {
         if (layerName.equals("矢量地图")) {
             aMap.setMapType(AMap.MAP_TYPE_NORMAL);// 矢量地图模式
@@ -183,7 +185,6 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     public void onNothingSelected(AdapterView<?> parent) {
     }
 
-
     @Override
     public boolean onMarkerClick(Marker marker) {
         marker.showInfoWindow();
@@ -192,12 +193,14 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
 
     //alarmManager可叫醒CPU,保证关闭屏后还可定位
     public void AlarmCPU() {
-        Intent intentRepeat = new Intent(this, MainActivity.class);
-        PendingIntent sender = PendingIntent.getService(this, 0, intentRepeat, 0);
-        long triggerTime = SystemClock.elapsedRealtime() + 1000; // 第一次时间
-        long intervalTime = 1000; // ms
-        AlarmManager am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-        am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerTime, intervalTime, sender);
+        Intent intent = new Intent(MainActivity.this, MainActivity.class);
+        PendingIntent sender = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+        // We want the alarm to go off 10 seconds from now.
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.add(Calendar.SECOND, 1);
+        // Schedule the alarm!
+        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 1000, sender);
     }
-
 }
